@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Random Groups</title>
+  </head>
+  <body>
+    <h1>Random Groups</h1>
+    <h3>Group Members</h3>
+    <textarea name="members" id="members" cols="20" rows="12">
+Nat
+Diane
+Frank
+Tim
+Alex
+Carol
+Larry</textarea
+    >
+    (one per line)
+    <h3>Groups</h3>
+    <em id="number-groups">N</em> group(s) of size:
+    <input type="number" name="group-size" id="group-size" size="3" value="2" />
+
+    <h3>Constraints</h3>
+    <p>
+      Ensure grouped:<br />
+      <textarea name="members" id="members" cols="20" rows="3">
+Nat, Carol</textarea
+      >
+    </p>
+    <p>
+      Ensure <b>not</b> grouped:<br />
+      <textarea name="members" id="members" cols="20" rows="3">
+Frank, Tim
+Alex, Larry</textarea
+      >
+    </p>
+
+    <p>
+      <button id="randomize">Randomize!</button>
+    </p>
+
+    <div id="random-groups">
+      <h3>Group 1</h3>
+      <ul>
+        <li>Frank</li>
+        <li>Diane</li>
+      </ul>
+
+      <h3>Group 2</h3>
+      <ul>
+        <li>Nat</li>
+        <li>Tim</li>
+      </ul>
+    </div>
+
+    <script>
+      document.getElementById("randomize").addEventListener("click", (e) => {
+        e.preventDefault();
+        const membersValue = document.getElementById("members").value;
+        const members = membersValue
+          .split("\n")
+          .map((member) => member.trim())
+          .filter((member) => member.length > 0);
+        //console.log(members);
+        const groupSize = document.getElementById("group-size").valueAsNumber;
+        if (groupSize < 1) return;
+        const numGroups = Math.ceil(members.length / groupSize);
+        document.getElementById("number-groups").innerText = numGroups;
+
+        // compute random groups
+        const randomGroups = [];
+        for (let i = 0; i < numGroups; i++) randomGroups.push(new Set());
+        while (members.length > 0) {
+          for (const group of randomGroups) {
+            const idx = Math.floor(Math.random() * members.length);
+            const foo = members.splice(idx, 1);
+            group.add(foo);
+            if (members.length == 0) {
+              break;
+            }
+          }
+        }
+
+        // output groups
+        let groupsHtml = "";
+        for (const [idx, group] of randomGroups.entries()) {
+          groupsHtml += `<h3>Group ${idx + 1}</h3><ul>`;
+          for (const member of group) {
+            groupsHtml += `<li>${member}</li>`;
+          }
+          groupsHtml += `</ul>`;
+        }
+        document.getElementById("random-groups").innerHTML = groupsHtml;
+
+        //alert("hi");
+      });
+    </script>
+  </body>
+</html>
