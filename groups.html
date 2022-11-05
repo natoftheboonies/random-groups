@@ -26,13 +26,13 @@ Larry</textarea
     <h3>Constraints</h3>
     <p>
       Ensure grouped:<br />
-      <textarea name="members" id="members" cols="20" rows="3">
+      <textarea name="ensure" id="ensure" cols="20" rows="3">
 Nat, Carol</textarea
       >
     </p>
     <p>
       Ensure <b>not</b> grouped:<br />
-      <textarea name="members" id="members" cols="20" rows="3">
+      <textarea name="avoid" id="avoid" cols="20" rows="3">
 Frank, Tim
 Alex, Larry</textarea
       >
@@ -57,6 +57,64 @@ Alex, Larry</textarea
     </div>
 
     <script>
+      // https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function solve(members, numGroups, constraints) {
+        // create numGroups groups as Sets
+        const randomGroups = [];
+        for (let i = 0; i < numGroups; i++) randomGroups.push(new Set());
+
+        const maxGroupSize = Math.ceil(members.length / numGroups);
+
+        // place ensure in random groups
+        if (Object.keys(constraints).includes("ensure")) {
+          for (const ensure of constraints.ensure) {
+            // find a group which contains any of the constraint members
+            let match = randomGroups.find((group) =>
+              ensure.some((m) => group.has(m))
+            );
+            // if there are none, select a random group which has room
+            if (!match) {
+              const candidates = randomGroups.filter(
+                (group) => group.size <= maxGroupSize - ensure.length
+              );
+              match = candidates[Math.floor(Math.random() * candidates.length)];
+            }
+            // add the constraint members to the group
+            ensure.forEach((m) => {
+              match.add(m);
+              const idx = members.indexOf(m);
+              if (idx > -1) members.splice(idx, 1);
+            });
+          }
+        }
+
+        // divide avoid into random groups
+
+        // allocate remaining members
+        while (members.length > 0) {
+          const candidates = randomGroups.filter(
+            (group) => group.size <= maxGroupSize - 1
+          );
+          for (const group of candidates) {
+            const idx = Math.floor(Math.random() * members.length);
+            const foo = members.splice(idx, 1);
+            group.add(foo);
+            if (members.length == 0) {
+              break;
+            }
+          }
+        }
+        return randomGroups;
+      }
+
       document.getElementById("randomize").addEventListener("click", (e) => {
         e.preventDefault();
         const membersValue = document.getElementById("members").value;
@@ -70,32 +128,35 @@ Alex, Larry</textarea
         const numGroups = Math.ceil(members.length / groupSize);
         document.getElementById("number-groups").innerText = numGroups;
 
-        // compute random groups
-        const randomGroups = [];
-        for (let i = 0; i < numGroups; i++) randomGroups.push(new Set());
-        while (members.length > 0) {
-          for (const group of randomGroups) {
-            const idx = Math.floor(Math.random() * members.length);
-            const foo = members.splice(idx, 1);
-            group.add(foo);
-            if (members.length == 0) {
-              break;
-            }
-          }
-        }
+        // gather constraints
+        const ensure = document
+          .getElementById("ensure")
+          .value.split("\n")
+          .map((rule) => rule.split(",").map((member) => member.trim()));
+
+        const avoid = document
+          .getElementById("avoid")
+          .value.split("\n")
+          .map((rule) => rule.split(",").map((member) => member.trim()));
+
+        const constraints = {
+          ensure: ensure,
+          avoid: avoid,
+        };
+
+        randomGroups = solve(members, numGroups, constraints);
 
         // output groups
         let groupsHtml = "";
         for (const [idx, group] of randomGroups.entries()) {
           groupsHtml += `<h3>Group ${idx + 1}</h3><ul>`;
-          for (const member of group) {
+
+          for (const member of shuffleArray(Array.from(group))) {
             groupsHtml += `<li>${member}</li>`;
           }
           groupsHtml += `</ul>`;
         }
         document.getElementById("random-groups").innerHTML = groupsHtml;
-
-        //alert("hi");
       });
     </script>
   </body>
