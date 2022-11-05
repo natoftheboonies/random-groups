@@ -2,6 +2,8 @@
 
 Given a list of members, and a target group size, allocates the members randomly into groups.
 
-Soon will allow *secret* constraints (ensure grouped, prevent grouped) via a hidden pane
+Also supports *secret* constraints (ensure grouped, prevent grouped) via a hidden pane.  Press `ctrl+shift+C` to reveal and hide the constraints.
 
-On request by a HS teacher who wants semi-random groups of students.
+On request by a HS teacher who wants mostly-random groups of students.
+
+TODO: Check for impossible constraints.

@@ -16,45 +16,37 @@ Frank
 Tim
 Alex
 Carol
-Larry</textarea
+Larry
+Barbara</textarea
     >
     (one per line)
     <h3>Groups</h3>
     <em id="number-groups">N</em> group(s) of size:
-    <input type="number" name="group-size" id="group-size" size="3" value="2" />
+    <input type="number" name="group-size" id="group-size" size="2" value="3" />
 
-    <h3>Constraints</h3>
-    <p>
-      Ensure grouped:<br />
-      <textarea name="ensure" id="ensure" cols="20" rows="3">
+    <div id="constraints" style="display: none">
+      <h3>Constraints</h3>
+      (Press <code>Ctrl+Shift+C</code> to hide or show)
+      <p>
+        Ensure grouped:<br />
+        <textarea name="ensure" id="ensure" cols="20" rows="3">
 Nat, Carol</textarea
-      >
-    </p>
-    <p>
-      Ensure <b>not</b> grouped:<br />
-      <textarea name="avoid" id="avoid" cols="20" rows="3">
+        >
+      </p>
+      <p>
+        Ensure <b>not</b> grouped:<br />
+        <textarea name="avoid" id="avoid" cols="20" rows="3">
 Frank, Tim
 Alex, Larry</textarea
-      >
-    </p>
+        >
+      </p>
+    </div>
 
     <p>
       <button id="randomize">Randomize!</button>
     </p>
 
-    <div id="random-groups">
-      <h3>Group 1</h3>
-      <ul>
-        <li>Frank</li>
-        <li>Diane</li>
-      </ul>
-
-      <h3>Group 2</h3>
-      <ul>
-        <li>Nat</li>
-        <li>Tim</li>
-      </ul>
-    </div>
+    <div id="random-groups"></div>
 
     <script>
       // https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
@@ -66,6 +58,17 @@ Alex, Larry</textarea
         return array;
       }
 
+      window.addEventListener("keydown", function (event) {
+        if (event.ctrlKey && event.shiftKey && event.code === "KeyC") {
+          const x = document.getElementById("constraints");
+          if (x.style.display === "none") {
+            x.style.display = "block";
+          } else {
+            x.style.display = "none";
+          }
+        }
+      });
+
       function solve(members, numGroups, constraints) {
         // create numGroups groups as Sets
         const randomGroups = [];
@@ -73,9 +76,13 @@ Alex, Larry</textarea
 
         const maxGroupSize = Math.ceil(members.length / numGroups);
 
+        // todo ignore constraints with invalid member references
+
         // place ensure in random groups
         if (Object.keys(constraints).includes("ensure")) {
           for (const ensure of constraints.ensure) {
+            if (ensure.length < 2) continue;
+            //console.log("ensure", ensure);
             // find a group which contains any of the constraint members
             let match = randomGroups.find((group) =>
               ensure.some((m) => group.has(m))
@@ -97,19 +104,47 @@ Alex, Larry</textarea
         }
 
         // divide avoid into random groups
+        if (Object.keys(constraints).includes("avoid")) {
+          for (const avoid of constraints.avoid) {
+            if (avoid.length < 2) continue;
+            //console.log("avoid", avoid);
+            // identify groups in which to distribute members
+            const candidates = randomGroups.filter(
+              (g) => g.size < maxGroupSize && !avoid.some((a) => g.has(a))
+            );
+            // exclude members already distributed
+            const avoidRemain = avoid.filter(
+              (a) => !randomGroups.some((g) => g.has(a))
+            );
+            if (candidates.size < avoidRemain.length)
+              console.err("not enough groups to distribute", avoidRemain);
+            for (const group of candidates) {
+              if (avoidRemain.length == 0) break;
+              const foo = avoidRemain.pop();
+              group.add(foo);
+              const idx = members.indexOf(foo);
+              if (idx > -1) members.splice(idx, 1);
+            }
+          }
+        }
+
+        // then decide if we are still solve-able or not
 
         // allocate remaining members
         while (members.length > 0) {
           const candidates = randomGroups.filter(
-            (group) => group.size <= maxGroupSize - 1
+            (group) => group.size < maxGroupSize
           );
-          for (const group of candidates) {
+          // find smallest groups
+          const minSize = candidates.sort((a, b) => a.size - b.size)[0].size;
+          for (const group of shuffleArray(
+            candidates.filter((a) => a.size == minSize)
+          )) {
             const idx = Math.floor(Math.random() * members.length);
-            const foo = members.splice(idx, 1);
+            const foo = members.splice(idx, 1).pop();
+            //console.log('add', foo, group);
             group.add(foo);
-            if (members.length == 0) {
-              break;
-            }
+            if (members.length == 0) break;
           }
         }
         return randomGroups;
