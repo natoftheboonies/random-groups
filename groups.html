@@ -26,7 +26,7 @@ Barbara</textarea
 
     <div id="constraints" style="display: none">
       <h3>Constraints</h3>
-      (Press <code>Ctrl+Shift+C</code> to hide or show)
+      (Press <code>Ctrl+Shift+S</code> to hide or show)
       <p>
         Ensure grouped:<br />
         <textarea name="ensure" id="ensure" cols="20" rows="3">
@@ -59,7 +59,8 @@ Alex, Larry</textarea
       }
 
       window.addEventListener("keydown", function (event) {
-        if (event.ctrlKey && event.shiftKey && event.code === "KeyC") {
+        // https://stackoverflow.com/questions/11941180/available-keyboard-shortcuts-for-web-applications
+        if (event.ctrlKey && event.shiftKey && event.code === "KeyS") {
           const x = document.getElementById("constraints");
           if (x.style.display === "none") {
             x.style.display = "block";
